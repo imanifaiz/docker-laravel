@@ -1,0 +1,85 @@
+version: '3'
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: DockerfileNginx
+    container_name: bc_exchange_nginx
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway" 
+    ports:
+      - "8093:80"
+      - "8496:443"
+    volumes:
+      - ./../.:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+      - mysql
+      - redis
+    networks:
+      - bayarcash_exchange
+    hostname: bayarcash.exchange.test
+    extra_hosts:
+      - "bayarcash.console.test:192.168.1.102"
+      - "bayarcash.console6.test:192.168.1.102"
+
+  mysql:
+    image: mariadb:latest
+    container_name: bc_exchange_mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "4311:3306"
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      MARIADB_DATABASE: bayarcash_exchange
+      MARIADB_USER: bayarcash_exchange
+      MARIADB_PASSWORD: bayarcash_exchange
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: true
+    networks:
+      - bayarcash_exchange
+
+  php:
+    build:
+      context: .
+      dockerfile: DockerfilePhp
+    container_name: bc_exchange_php
+    volumes:
+      - ./../.:/var/www/html
+      - ./supervisor/bayarcash_exchange.conf:/etc/supervisor.d/bayarcash_exchange.ini
+      - ./php/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./run.sh:/var/www/html/run.sh
+    ports:
+      - "9013:9000"
+    networks:
+      - bayarcash_exchange
+
+  redis:
+    image: redis:alpine
+    command: redis-server --appendonly yes --requirepass 123456
+    container_name: bc_exchange_redis
+    ports:
+      - "6392:6379"
+    volumes:
+      - ./redis/data:/data
+    #      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    # environment:
+    #   - REDIS_REPLICATION_MODE=master
+    networks:
+      - bayarcash_exchange
+
+volumes:
+  mysql:
+    external: true
+  nginx:
+    external: true
+  redis:
+    external: true 
+
+networks:
+  bayarcash_exchange:
+    external: true
+    # driver: bridge

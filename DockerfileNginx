@@ -1,0 +1,11 @@
+FROM nginx:stable-alpine
+
+RUN apk update
+RUN apk add bash
+
+# INSTALL openssl
+RUN apk add openssl
+RUN openssl req -x509 -nodes -days 365 -subj "/C=MY/ST=KUALA LUMPUR/O=BayarCash Sdn Bhd, Inc./CN=bayarcash.exchange.test" \
+    -addext "subjectAltName=DNS:bayarcash.exchange.test" -newkey rsa:2048 \
+    -keyout /etc/ssl/private/nginx-selfsigned.key \
+    -out /etc/ssl/certs/nginx-selfsigned.crt
