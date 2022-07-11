@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: DockerfileNginx
-    container_name: bc_exchange_nginx
+    container_name: nginx
     # extra_hosts:
     #   - "host.docker.internal:host-gateway" 
     ports:
@@ -19,15 +19,12 @@ services:
       - mysql
       - redis
     networks:
-      - bayarcash_exchange
-    hostname: bayarcash.exchange.test
-    extra_hosts:
-      - "bayarcash.console.test:192.168.1.102"
-      - "bayarcash.console6.test:192.168.1.102"
+      - laravel_app
+    hostname: laravel_app.test
 
   mysql:
     image: mariadb:latest
-    container_name: bc_exchange_mysql
+    container_name: mysql
     restart: unless-stopped
     tty: true
     ports:
@@ -35,41 +32,38 @@ services:
     volumes:
       - ./mysql:/var/lib/mysql
     environment:
-      MARIADB_DATABASE: bayarcash_exchange
-      MARIADB_USER: bayarcash_exchange
-      MARIADB_PASSWORD: bayarcash_exchange
+      MARIADB_DATABASE: laravel_app
+      MARIADB_USER: laravel_app
+      MARIADB_PASSWORD: laravel_app
       MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: true
     networks:
-      - bayarcash_exchange
+      - laravel_app
 
   php:
     build:
       context: .
       dockerfile: DockerfilePhp
-    container_name: bc_exchange_php
+    container_name: php
     volumes:
       - ./../.:/var/www/html
-      - ./supervisor/bayarcash_exchange.conf:/etc/supervisor.d/bayarcash_exchange.ini
+      - ./supervisor/laravel_app.conf:/etc/supervisor.d/laravel_app.ini
       - ./php/custom.ini:/usr/local/etc/php/conf.d/custom.ini
       - ./run.sh:/var/www/html/run.sh
     ports:
       - "9013:9000"
     networks:
-      - bayarcash_exchange
+      - laravel_app
 
   redis:
     image: redis:alpine
     command: redis-server --appendonly yes --requirepass 123456
-    container_name: bc_exchange_redis
+    container_name: redis
     ports:
       - "6392:6379"
     volumes:
       - ./redis/data:/data
-    #      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
-    # environment:
-    #   - REDIS_REPLICATION_MODE=master
     networks:
-      - bayarcash_exchange
+      - laravel_app
 
 volumes:
   mysql:
@@ -80,6 +74,6 @@ volumes:
     external: true 
 
 networks:
-  bayarcash_exchange:
+  laravel_app:
     external: true
     # driver: bridge
